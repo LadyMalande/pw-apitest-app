@@ -57,6 +57,15 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+
+
+  // Go to the starting url before each test.
+  await page.goto('https://conduit.bondaracademy.com/');
+  await page.waitForLoadState('networkidle');
+});
+
+test('has title', async ({ page }) => {
+
   await page.route('*/**/api/articles*', async route => {
 
     const response =await route.fetch();
@@ -70,12 +79,7 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  // Go to the starting url before each test.
-  await page.goto('https://conduit.bondaracademy.com/');
-  await page.waitForLoadState('networkidle');
-});
-
-test('has title', async ({ page }) => {
+  await page.getByText('Global Feed').click();
 
   // Expect a title "to contain" a substring.
   await expect(page.locator('.navbar-brand')).toHaveText('conduit');
@@ -83,4 +87,21 @@ test('has title', async ({ page }) => {
   await expect(page.locator('app-article-list p').first()).toHaveText('This is a mocked article description');
 });
 
+test('delete article', async ({ page, request }) => {
+  // Get auth token to be able to publish an article as signed in user
+  // Create API call to create a new article 
+  // Then delete the article via UI
+
+  const response = await request.post('https://conduit-api.bondaracademy.com/api/users/login', {
+    data: {
+      "user":{"email":"terkaTesterka@gmail.com","password":"Welcome1"}
+    }
+  })
+
+  const responseBody = await response.json()
+  console.log()
+
+  // udemy part 57 TODO Perform API Request, time 10:11
+
+});
 
