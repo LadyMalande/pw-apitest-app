@@ -35,12 +35,48 @@ export default defineConfig({
     }
   },
 
+globalSetup: require.resolve('./global-setup.ts'),
+globalTeardown: require.resolve('./global-teardown.ts'),
+
   /* Configure projects for major browsers */
   projects: [
     {
       // Setup project to perform authentication once from the test file 'auth.setup.ts'
       name: 'setup',
       testMatch: 'auth.setup.ts',
+    },
+        {
+      // Setup project to perform authentication once from the test file 'auth.setup.ts'
+      name: 'articleSetup',
+      testMatch: 'newArticle.setup.ts',
+      dependencies: ['setup'],
+      teardown: 'articleCleanUp'
+    },
+     {
+      name: 'articleCleanUp',
+      testMatch: 'articleCleanUp.setup.ts',
+    },
+    {
+      name: 'regression',
+      testIgnore: 'likesCounter.spec.ts',
+      // Use the authenticated context from the setup project
+      use: { ...devices['Desktop Chrome'], storageState: '.auth/user.json' },
+      // Before running this chromium test project, run the 'setup' project
+      dependencies: ['setup']
+    },
+    {
+      name: 'likeCounter',
+      testMatch: 'likesCounter.spec.ts',
+      // Use the authenticated context from the setup project
+      use: { ...devices['Desktop Chrome'], storageState: '.auth/user.json' },
+      // Before running this chromium test project, run the 'setup' project
+      dependencies: ['articleSetup']
+    },
+    {
+      name: 'likeCounterGlobal',
+      testMatch: 'likesCounterGlobal.spec.ts',
+      // Use the authenticated context from the setup project
+      use: { ...devices['Desktop Chrome'], storageState: '.auth/user.json' },
     },
     {
       name: 'chromium',
