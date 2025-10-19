@@ -30,23 +30,36 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    extraHTTPHeaders: {
+      'Authorization': `Token ${process.env.JWT_TOKEN}`
+    }
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
+      // Setup project to perform authentication once from the test file 'auth.setup.ts'
+      name: 'setup',
+      testMatch: 'auth.setup.ts',
+    },
+    {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      // Use the authenticated context from the setup project
+      use: { ...devices['Desktop Chrome'], storageState: '.auth/user.json' },
+      // Before running this chromium test project, run the 'setup' project
+      dependencies: ['setup']
     },
 
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: { ...devices['Desktop Firefox'], storageState: '.auth/user.json'  },
+      dependencies: ['setup']
     },
 
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { ...devices['Desktop Safari'], storageState: '.auth/user.json'  },
+      dependencies: ['setup']
     },
 
     /* Test against mobile viewports. */

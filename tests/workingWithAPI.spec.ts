@@ -57,11 +57,10 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-
-
   // Go to the starting url before each test.
   await page.goto('https://conduit.bondaracademy.com/');
   await page.waitForLoadState('networkidle');
+
 });
 
 test('has title', async ({ page }) => {
@@ -92,16 +91,53 @@ test('delete article', async ({ page, request }) => {
   // Create API call to create a new article 
   // Then delete the article via UI
 
-  const response = await request.post('https://conduit-api.bondaracademy.com/api/users/login', {
+
+
+  const articleResponse = await request.post('https://conduit-api.bondaracademy.com/api/articles', {
     data: {
-      "user":{"email":"terkaTesterka@gmail.com","password":"Welcome1"}
+      "article": {
+        "title": "Article to be deleted",
+        "description": "This article will be deleted in the test",
+        "body": "This is the body of the article to be deleted",
+        "tagList": ["delete", "test"]
+      }
     }
-  })
+  });
 
-  const responseBody = await response.json()
-  console.log()
+  expect(articleResponse.status()).toBe(201);
 
-  // udemy part 57 TODO Perform API Request, time 10:11
+  await page.getByText('Global Feed').click()
+  await page.getByText('Article to be deleted').click()
+  await page.getByRole('button', {name: 'Delete Article'}).first().click()
+  await page.getByText('Global Feed').click()
+
+  // Validate the article does not exist any more
+  await expect(page.locator('app-article-list h1').first()).not.toContainText('Article to be deleted');
 
 });
 
+test('Create a new article and then cleanup via API', async ({ page, request}) => {
+
+  await page.getByText('New Article').click();
+  await page.getByRole('textbox', {name: 'Article Title'}).fill('Article created via UI to be deleted via API');
+  await page.getByRole('textbox', {name: "What's this article about?"}).fill('This is the description');
+  await page.getByRole('textbox', {name: 'Write your article (in markdown)'}).fill('This is the body of the article created via UI');
+  await page.getByRole('textbox', {name: 'Enter tags'}).fill('ui-test, playwright');
+  await page.getByRole('button', {name: 'Publish Article' }).click();
+  const articleResponse = await page.waitForResponse('https://conduit-api.bondaracademy.com/api/articles/');
+  const articleResponseBody = await articleResponse.json();
+  const articleSlug = articleResponseBody.article.slug;
+  await page.waitForLoadState('networkidle');
+
+  await expect(page.locator('app-article-page h1').first()).toContainText('Article created via UI to be deleted via API');
+
+  await page.getByText('Home').click();
+  await page.getByText('Global Feed').click();
+
+  await expect(page.locator('app-article-list h1').first()).toContainText('Article created via UI to be deleted via API');
+
+  const deleteResponse = await request.delete(`https://conduit-api.bondaracademy.com/api/articles/${articleSlug}`);
+
+  await expect(deleteResponse.status()).toBe(204);
+
+});
